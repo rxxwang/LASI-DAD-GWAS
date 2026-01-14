@@ -8,3 +8,5 @@
 # Always keep these
 !.gitignore
 !README.md
+!GWAS
+!GWAS/**
