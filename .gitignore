@@ -1,0 +1,10 @@
+# Ignore everything
+*
+
+# Allow R and shell scripts
+!*.R
+!*.sh
+
+# Always keep these
+!.gitignore
+!README.md
