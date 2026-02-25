@@ -4,6 +4,7 @@
 # Allow R and shell scripts
 !*.R
 !*.sh
+!*Snakefile
 
 # Always keep these
 !.gitignore

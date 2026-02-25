@@ -1,0 +1,3 @@
+[submodule "GWAS"]
+	path = GWAS
+	url = https://github.com/rxxwang/LASI-DAD-GWAS.git
