@@ -3,16 +3,22 @@ library(susieR)
 library(dplyr)
 setwd("/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/")
 
+# Read in all the data
 CpG = snakemake@params[["CpG"]]
 bio = snakemake@params[["biomarker"]]
 chr = snakemake@params[["chr"]]
 exposure = read.table(snakemake@input[["exposure"]], header = T)
-cor_matrix = read.table(snakemake@input[["cor_matrix"]])
+# cor_matrix = read.table(snakemake@input[["cor_matrix"]])
+cor_matrix = readRDS(snakemake@input[["cor_matrix"]])
 outcome_file = read.table(snakemake@input[["outcome"]], header = T) 
+stopifnot(nrow(exposure) == nrow(cor_matrix))
+# Filter SNPs in GWAS to be same as mQTL
 outcome = outcome_file %>% filter(rs %in% exposure$rs) %>% arrange(ps)
-overlap_rs = outcome$rs
-cor_matrix = cor_matrix[exposure$rs %in% overlap_rs, exposure$rs %in% overlap_rs]
-exposure = exposure %>% filter(rs %in% overlap_rs) %>% arrange(ps)
+overlap_rs <- intersect(exposure$rs, outcome$rs)
+cor_matrix = cor_matrix[match(overlap_rs, exposure$rs), match(overlap_rs, exposure$rs)]
+exposure = exposure[match(overlap_rs, exposure$rs), ]
+outcome <- outcome[match(overlap_rs, outcome$rs), ]
+
 if(sum(is.na(as.matrix(cor_matrix))) > 0){
     na_cols <- which(colSums(is.na(cor_matrix)) > 0)
     removed_count <- length(na_cols)
@@ -46,7 +52,14 @@ Z_x = Zx * sqrt(n_x-1) / sqrt(Zx^2 + n_x - 2)
 Z_y = Zy * sqrt(n_y-1) / sqrt(Zy^2 + n_y - 2)
 
 print(Sys.time())
-res_susie <- susie_suff_stat(XtX = (n_x - 1)*R, Xty = sqrt(n_x - 1)*Z_x, yty = n_x - 1, n = n_x, estimate_residual_variance = FALSE, max_iter = 1000)
+# res_susie <- susieR::susie_suff_stat(XtX = (n_x - 1)*R, Xty = sqrt(n_x - 1)*Z_x, yty = n_x - 1, n = n_x, estimate_residual_variance = FALSE, max_iter = 1000)
+res_susie <- susieR::susie_rss(
+  R = R,              # The correlation matrix
+  z = Z_x,            # The Z-scores
+  n = n_x,            # Sample size
+  estimate_residual_variance = FALSE, 
+  max_iter = 1000
+)
 if (res_susie$niter >= 1000){
     num_cs = -1
 } else {

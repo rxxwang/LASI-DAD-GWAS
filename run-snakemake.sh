@@ -8,4 +8,5 @@ snakemake \
    --default-resources \
    --slurm-logdir /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/snake-log/ \
    --skip-script-cleanup \
+   --rerun-incomplete \
    --slurm-keep-successful-logs

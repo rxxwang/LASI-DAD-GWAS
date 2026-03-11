@@ -5,10 +5,10 @@ setwd("/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/2026
 
 # 1. Load your index file
 sig_cpgs <- read.table("sig_cpgs.txt", header = TRUE, stringsAsFactors = FALSE)
-results_dir <- "MR_rho_results/"
+results_dir <- "MR_rho_results3/"
 
 # 2. Main processing function
-process_results <- function(df) {
+process_results <- function(df, results_dir) {
   results_list <- pmap(list(df$CpG, df$biomarker, df$chr), function(cpg, bio, ch) {
     # Construct the filename using the period format
     file_path <- file.path(results_dir, paste0(cpg, ".", bio, ".chr", ch, ".RDS"))
@@ -47,7 +47,7 @@ process_results <- function(df) {
 }
 
 # Run the processing
-all_outcomes <- process_results(sig_cpgs)
+all_outcomes <- process_results(sig_cpgs, results_dir)
 
 # --- Task 1: Summary Table ---
 status_vec <- map_chr(all_outcomes, ~ .x[["status"]] %||% "Unknown2")
@@ -57,7 +57,7 @@ print(status_counts)
 
 # --- Task 2: Error Data Frame ---
 error_df <- map_dfr(all_outcomes, function(x) {
-  if (x$status == "NULL (Error)") {
+  if (x$status == "NULL (Error)" | x$status == "No converging") {
     return(data.frame(CpG = x$info[1], biomarker = x$info[2], chr = x$info[3]))
   }
 })
@@ -81,3 +81,21 @@ p <- ggplot(success_df, aes(x = -log10(p_value))) +
        
 
 print(p)
+
+# 2. Prepare the data
+plot_data <- data.frame(
+  observed = -log10(sort(success_df$p_value)),
+  expected = -log10(ppoints(length(success_df$p_value)))
+)
+
+# 3. Create the plot
+qqplot <- ggplot(plot_data, aes(x = expected, y = observed)) +
+  geom_point(color = "steelblue", alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(
+    title = "QQ-Plot of P-values",
+    x = expression(Expected~~-log[10](p)),
+    y = expression(Observed~~-log[10](p))
+  ) +
+  theme_minimal()
+ggsave(qqplot, file = "qqplot_MR.png", width = 5, height = 5)

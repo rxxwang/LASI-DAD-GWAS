@@ -2,26 +2,24 @@ library(bigsnpr)
 library(data.table)
 library(magrittr)
 
-# --- 1. Settings ---
-geno_base <- "/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/genotype_mqtl"
-cleaned_results_dir <- "/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/mQTL_cleaned_results"
+CpG = snakemake@params[["CpG"]]
+chr = snakemake@params[["chr"]]
 
 # --- 2. Function to Calculate LD Matrix ---
 calculate_ld_in_r <- function(cpg_id, chr) {
   
   # Load your cleaned association results to get the SNP list
-  assoc_path <- file.path(cleaned_results_dir, paste0(cpg_id, ".cleaned.assoc.txt"))
+  assoc_path <- file.path(snakemake@input[["exposure"]])
   df_stats <- fread(assoc_path)
   snp_list <- df_stats$rs  # Ensure this matches your ID column name
   
-  bfile_base <- file.path(geno_base, paste0("chr", chr, "_filtered"))
-  bed_orig <- paste0(bfile_base, ".bed")
-  bim_orig <- paste0(bfile_base, ".bim")
-  fam_orig <- paste0(bfile_base, ".fam")
+  bed_orig <- snakemake@input[["genotype_bed"]]
+  bim_orig <- snakemake@input[["genotype_bim"]]
+  fam_orig <- snakemake@input[["genotype_fam"]]
   
   # 1. Manually check how many individuals are actually in your FAM file
   # We use 'wc -l' via system command to get the true line count
-  n_individuals <- as.numeric(system(paste("wc -l <", paste0(bfile_path, ".fam")), intern = TRUE))
+  n_individuals <- as.numeric(system(paste("wc -l <", fam_orig), intern = TRUE))
   message("True number of individuals: ", n_individuals)
 
   # 2. Create a truly clean dummy FAM file
@@ -38,8 +36,8 @@ calculate_ld_in_r <- function(cpg_id, chr) {
   fwrite(clean_fam, paste0(tmp_base, ".fam"), sep = " ", col.names = FALSE)
 
   # 4. Link the original BED and BIM
-  file.symlink(normalizePath(paste0(bfile_path, ".bed")), paste0(tmp_base, ".bed"))
-  file.symlink(normalizePath(paste0(bfile_path, ".bim")), paste0(tmp_base, ".bim"))
+  file.symlink(normalizePath(bed_orig), paste0(tmp_base, ".bed"))
+  file.symlink(normalizePath(bim_orig), paste0(tmp_base, ".bim"))
 
   # 5. NOW read the Bed. 
   # It will see 'n_individuals' lines in the FAM and create the correct N x P matrix
@@ -67,4 +65,5 @@ calculate_ld_in_r <- function(cpg_id, chr) {
   return(R)
 }
 
-R <- calculate_ld_in_r("cg27559595", 15)
+R <- calculate_ld_in_r(CpG, chr)
+saveRDS(R, file = snakemake@output[["results"]])
