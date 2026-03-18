@@ -44,10 +44,19 @@ dim(cor_matrix)
 dim(outcome)
 dim(exposure)
 
+y_bio = pheno_gwas[,bio]
+x_bio = as.matrix(covariate_gwas[,2:ncol(covariate_gwas)])
+nabio = !is.na(y_bio)
+y_cpg = pheno_mqtl[,CpG]
+x_cpg = as.matrix(covariate_mqtl[,2:ncol(covariate_mqtl)])
+nacpg = !is.na(y_cpg)
+na = nabio*nacpg == 1
+
+n_x = sum(nacpg)
+n_y = sum(nabio)
+
 Zx = exposure$beta / exposure$se
 Zy = outcome$beta / outcome$se
-n_x = 1129
-n_y = 2224
 Z_x = Zx * sqrt(n_x-1) / sqrt(Zx^2 + n_x - 2)
 Z_y = Zy * sqrt(n_y-1) / sqrt(Zy^2 + n_y - 2)
 
@@ -102,13 +111,6 @@ if(num_cs > 0){
     Z_x = Zx * sqrt(n_x-1) / sqrt(Zx^2 + n_x - 2)
     Z_y = Zy * sqrt(n_y-1) / sqrt(Zy^2 + n_y - 2)
 
-    y_bio = pheno_gwas[,bio]
-    x_bio = as.matrix(covariate_gwas[,2:ncol(covariate_gwas)])
-    nabio = !is.na(y_bio)
-    y_cpg = pheno_mqtl[,CpG]
-    x_cpg = as.matrix(covariate_mqtl[,2:ncol(covariate_mqtl)])
-    nacpg = !is.na(y_cpg)
-    na = nabio*nacpg == 1
     y_bio = y_bio[na]
     x_bio = x_bio[na,]
     y_cpg = y_cpg[na]
@@ -118,11 +120,8 @@ if(num_cs > 0){
     rho_obs = cor(model1$residuals, model2$residuals)
     rho = rho_obs * sqrt(sum(na)^2/sum(nabio)/sum(nacpg))
 
-    n_x = sum(nacpg)
-    n_y = sum(nabio)
-
     res_func_attempt <- tryCatch({
-        res_func <- finemappingMR_sampleOverlap(Z_x=Z_x, Z_y=Z_y, R=R, rho=0, n_x=n_x, n_y=n_y)
+        res_func <- finemappingMR_sampleOverlap(Z_x=Z_x, Z_y=Z_y, R=R, rho=rho, n_x=n_x, n_y=n_y)
         if (res_func$res$iter >= 1000) {
             message(paste("CpG", CpG, bio,": No converging!"))
             "No converging" # Return NULL so we don't save bad data

@@ -98,4 +98,4 @@ qqplot <- ggplot(plot_data, aes(x = expected, y = observed)) +
     y = expression(Observed~~-log[10](p))
   ) +
   theme_minimal()
-ggsave(qqplot, file = "qqplot_MR.png", width = 5, height = 5)
+ggsave(qqplot, file = "qqplot_MR2.png", width = 5, height = 5)
