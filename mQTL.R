@@ -4,6 +4,7 @@ pcs = read.csv("/net/orion/skardia_lab/clubhouse/research/projects/LASI/WGS_data
 mapping = read.csv("/net/orion/skardia_lab/clubhouse/research/projects/LASI/WGS_data_Dec_2021/QC_UM/ID_mapping/WGS_methy_map.csv")
 library(haven)
 library(dplyr)
+library(tidyr)
 library(stringr)
 # Find the significant cpgs
 pval = readRDS("/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20250822_EWAS4/pval.model2.RDS")
@@ -38,6 +39,8 @@ meth = as.matrix(meth)
 colnames(unmeth) = col_cpg
 rownames(unmeth) = data$Sample_name
 unmeth = as.matrix(unmeth)
+
+
 beta = log(meth/(meth+unmeth))
 beta = as.data.frame(beta)
 beta$barcode_w1 = rownames(meth)
@@ -48,6 +51,16 @@ beta$CD4T = data$CD4T
 beta$NK = data$NK
 beta$Bcell = data$Bcell
 beta$Mono = data$Mono
+
+meth_df <- as.data.frame(meth) %>% 
+  mutate(barcode_w1 = rownames(meth)) %>%
+  left_join(mapping[,c(2,3)], by = "barcode_w1") %>%
+  filter(!is.na(sampleid))
+sample_overlap = meth_df$sampleid
+unmeth_df <- as.data.frame(unmeth) %>% 
+  mutate(barcode_w1 = rownames(meth)) %>%
+  left_join(mapping[,c(2,3)], by = "barcode_w1") %>%
+  filter(!is.na(sampleid))
 
 beta <- beta %>% 
   mutate(PC1 = scale(pca_result$x[,1]), PC2 = scale(pca_result$x[,2]), PC3 = scale(pca_result$x[,3]), PC4 = scale(pca_result$x[,4])) %>%
@@ -63,6 +76,27 @@ grm = grm[order(rownames(grm)),order(colnames(grm))]
 beta = beta %>% filter(sampleid %in% rownames(grm))
 beta = beta[order(beta$sampleid),]
 
+meth_df = meth_df %>% filter(sampleid %in% rownames(grm))
+unmeth_df = unmeth_df %>% filter(sampleid %in% rownames(grm))
+meth_df = meth_df[order(meth_df$sampleid),]
+unmeth_df = unmeth_df[order(unmeth_df$sampleid),]
+
+write.table(
+  meth_df[,-ncol(meth_df)],
+  file = "/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/meth_pheno.txt",
+  quote = FALSE,   
+  row.names = TRUE,
+  col.names = TRUE, 
+  sep = " "      
+)
+write.table(
+  unmeth_df[,-ncol(unmeth_df)],
+  file = "/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/unmeth_pheno.txt",
+  quote = FALSE,   
+  row.names = TRUE,
+  col.names = TRUE, 
+  sep = " "      
+)
 # pheno data (4642 cpgs)
 pheno = cbind(
   data.frame(FID = rep(0, nrow(beta)), IID = beta$sampleid),

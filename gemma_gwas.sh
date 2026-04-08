@@ -8,16 +8,16 @@
 #SBATCH --mem=20g
 #SBATCH --output=/net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/slurm_output/%x_%A_%a.out
 
-# # Turn vcf file to bed file
+# Turn vcf file to bed file
 # for chr in {1..22}; do
 # #     plink2 --vcf /net/orion/skardia_lab/clubhouse/research/projects/LASI/WGS_data_Dec_2021/QC_UM/QC_UPenn/vcf_new_ids/chr${chr}.vcf.gz \
 # #            --make-bed \
 # #            --out /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/genotype/chr${chr}
 # #     echo "Finished converting chr${chr}"
-#     plink2 --bfile /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/genotype/chr${chr} \
-#            --keep /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/pheno.ids \
-#            --make-bed \
-#            --out /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/genotype/chr${chr}_filtered
+#     # plink2 --bfile /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/genotype/chr${chr} \
+#     #        --keep /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/pheno.ids \
+#     #        --make-bed \
+#     #        --out /net/orion/skardia_lab/clubhouse/research/projects/LASI/morrison_lab/20260113_GWAS1/genotype/chr${chr}_filtered
 #     awk 'NR==FNR{
 #         if(NR>1) {  # skip header
 #             pheno[$2] = $0   # store the whole line keyed by IID
